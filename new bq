@@ -1,0 +1,65 @@
+from google.cloud import storage, bigquery
+
+# Define GCS bucket and file paths
+bucket_name = 'your-bucket-name'
+html_filename = 'folder/folder/template.html'
+output_filename = 'folder/folder/output.html'
+
+# Define your BigQuery details
+project_id = 'your-project-id'
+dataset_id = 'your-dataset-id'
+table_id = 'your-table-id'
+query = f"""
+SELECT column2
+FROM `{project_id}.{dataset_id}.{table_id}`
+"""
+
+# Initialize the GCS client
+gcs_client = storage.Client()
+
+# Initialize the BigQuery client
+bq_client = bigquery.Client()
+
+def read_gcs_file(bucket_name, file_name):
+    """Reads a file from GCS bucket."""
+    bucket = gcs_client.bucket(bucket_name)
+    blob = bucket.blob(file_name)
+    content = blob.download_as_text()
+    return content
+
+def write_gcs_file(bucket_name, file_name, content):
+    """Writes content to a file in GCS bucket."""
+    bucket = gcs_client.bucket(bucket_name)
+    blob = bucket.blob(file_name)
+    blob.upload_from_string(content)
+
+# Run the BigQuery query and extract the second column data
+query_job = bq_client.query(query)
+results = query_job.result()
+
+replacements = [row.column2 for row in results]
+
+# Read the HTML file from GCS
+html_content = read_gcs_file(bucket_name, html_filename)
+
+# Show the initial HTML content
+print("Initial HTML content:")
+print(html_content)
+
+# Replace the placeholders in the HTML content
+for i, replacement in enumerate(replacements):
+    placeholder = f'Placeholder {i+1}'
+    if placeholder in html_content:
+        print(f"Replacing '{placeholder}' with '{replacement}'")
+        html_content = html_content.replace(placeholder, replacement)
+    else:
+        print(f"Placeholder '{placeholder}' not found in the HTML content")
+
+# Show the final HTML content
+print("Final HTML content:")
+print(html_content)
+
+# Write the updated HTML content back to GCS
+write_gcs_file(bucket_name, output_filename, html_content)
+
+print(f"HTML file updated and saved as {output_filename} in GCS bucket {bucket_name}")
