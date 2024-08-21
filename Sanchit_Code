@@ -1,0 +1,47 @@
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.Enumeration;
+
+public class PomXmlReader {
+    public static void main(String[] args) {
+        String jarFilePath = "path/to/your/file.jar";  // Replace with your JAR file path
+
+        try {
+            JarFile jarFile = new JarFile(jarFilePath);
+            Enumeration<JarEntry> entries = jarFile.entries();
+
+            while (entries.hasMoreElements()) {
+                JarEntry entry = entries.nextElement();
+
+                // Check if the entry is the pom.xml file
+                if (entry.getName().endsWith("pom.xml")) {
+                    System.out.println("Found pom.xml at: " + entry.getName());
+                    readPomXml(jarFile, entry);
+                    break;
+                }
+            }
+
+            jarFile.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void readPomXml(JarFile jarFile, JarEntry entry) {
+        try (InputStream inputStream = jarFile.getInputStream(entry);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.out.println(line);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
